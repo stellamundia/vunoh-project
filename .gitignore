@@ -1,0 +1,15 @@
+# Ignore environment variables (API keys)
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database files (we'll commit the SQL dump instead)
+instance/
+
+
+# Optional: logs
+*.log
+
