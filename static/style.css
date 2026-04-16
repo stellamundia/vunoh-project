@@ -1,0 +1,74 @@
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 40px;
+    background: #f8f9fa;
+    color: #333;
+}
+
+h1 {
+    color: #003087;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.input-box {
+    max-width: 700px;
+    margin: 30px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+textarea {
+    width: 100%;
+    height: 120px;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    resize: vertical;
+}
+
+button {
+    background: #00a651;
+    color: white;
+    padding: 14px 32px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button:hover {
+    background: #008c44;
+}
+
+h2 {
+    margin-top: 40px;
+    color: #003087;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background: #003087;
+    color: white;
+}
+
+tr:hover {
+    background: #f5f7ff;
+}

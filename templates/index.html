@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vunoh Global - AI Diaspora Assistant</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>🌍 Vunoh Global – AI Diaspora Assistant</h1>
+    
+    <div class="input-box">
+        <textarea id="userInput" rows="4" placeholder="Type your request in plain English...&#10;e.g. I need to send KES 15,000 to my mother in Kisumu urgently."></textarea>
+        <button onclick="submitRequest()">🚀 Submit Request</button>
+    </div>
+
+    <h2>Task Dashboard</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Task Code</th>
+                <th>Intent</th>
+                <th>Risk</th>
+                <th>Status</th>
+                <th>Employee</th>
+                <th>Created</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td><strong>{{ task.task_code }}</strong></td>
+                <td>{{ task.intent }}</td>
+                <td>{{ task.risk_score }}%</td>
+                <td>{{ task.status }}</td>
+                <td>{{ task.employee_category }}</td>
+                <td>{{ task.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <select onchange="updateStatus('{{ task.task_code }}', this.value)">
+                        <option value="Pending" {{ 'selected' if task.status == 'Pending' else '' }}>Pending</option>
+                        <option value="In Progress" {{ 'selected' if task.status == 'In Progress' else '' }}>In Progress</option>
+                        <option value="Completed" {{ 'selected' if task.status == 'Completed' else '' }}>Completed</option>
+                    </select>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        async function submitRequest() {
+            const msg = document.getElementById('userInput').value.trim();
+            if (!msg) return alert("Please type a request");
+
+            const res = await fetch('/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            });
+
+            const data = await res.json();
+            alert(`✅ Task Created!\n\nTask Code: ${data.task.task_code}`);
+            location.reload();   // refresh to show new task
+        }
+
+        async function updateStatus(taskCode, newStatus) {
+            await fetch('/update_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_code: taskCode, status: newStatus })
+            });
+            alert(`Status updated to ${newStatus}`);
+            location.reload();
+        }
+    </script>
+</body>
+</html>
