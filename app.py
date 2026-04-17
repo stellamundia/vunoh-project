@@ -114,17 +114,21 @@ def index():
 def process():
     user_message = request.json['message']
     
-    ai_json = call_groq(user_message)
+    # Call Groq
+    ai_json = call_groq(user_message)   # your existing function
     
     task_code = generate_task_code()
     risk = calculate_risk_score(ai_json["intent"], ai_json["entities"])
+    
+    # ←←← THIS IS THE IMPORTANT PART
+    employee_category = ai_json.get("employee_category", "Support Team")
     
     new_task = Task(
         task_code=task_code,
         intent=ai_json["intent"],
         entities=ai_json["entities"],
         risk_score=risk,
-        employee_category=ai_json["employee_category"],
+        employee_category=employee_category,        # ← Make sure this line exists
         steps=ai_json["steps"],
         whatsapp_message=ai_json["messages"]["whatsapp"],
         email_message=ai_json["messages"]["email"],
@@ -137,6 +141,7 @@ def process():
         "task_code": task_code,
         "intent": ai_json["intent"],
         "risk_score": risk,
+        "employee_category": employee_category,     # ← Send it to frontend
         "status": "Pending",
         "messages": ai_json["messages"]
     }})
@@ -150,6 +155,8 @@ def update_status():
         db.session.commit()
         return jsonify({"success": True})
     return jsonify({"success": False}), 404
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

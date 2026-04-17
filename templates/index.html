@@ -2,76 +2,411 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Vunoh Global - AI Diaspora Assistant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vunoh Global – AI Diaspora Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>🌍 Vunoh Global – AI Diaspora Assistant</h1>
-    
-    <div class="input-box">
-        <textarea id="userInput" rows="4" placeholder="Type your request in plain English...&#10;e.g. I need to send KES 15,000 to my mother in Kisumu urgently."></textarea>
-        <button onclick="submitRequest()">🚀 Submit Request</button>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+    <div class="header-inner">
+        <div class="logo">
+            <span class="logo-mark">V</span>
+            <div>
+                <span class="logo-name">Vunoh Global</span>
+                <span class="logo-tagline">AI Diaspora Assistant</span>
+            </div>
+        </div>
+        <div class="header-badge">
+            <span class="pulse-dot"></span>
+            AI Online
+        </div>
+    </div>
+</header>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+    <div class="hero-inner">
+        <p class="hero-eyebrow">Serving Kenyans abroad</p>
+        <h1 class="hero-title">Managing home just got<br><em>effortless</em></h1>
+        <p class="hero-sub">Send money, hire services, verify documents — describe what you need in plain English and our AI handles the rest.</p>
+        <div class="intent-chips">
+            <button class="chip" onclick="fillExample('send_money')">💸 Send Money</button>
+            <button class="chip" onclick="fillExample('hire_service')">🧹 Hire a Service</button>
+            <button class="chip" onclick="fillExample('verify_document')">📄 Verify Document</button>
+            <button class="chip" onclick="fillExample('airport_transfer')">✈️ Airport Transfer</button>
+        </div>
+    </div>
+</section>
+
+<!-- ===== REQUEST FORM ===== -->
+<main class="main-content">
+    <div class="request-card" id="requestCard">
+        <div class="request-card-header">
+            <span class="request-card-icon">✍️</span>
+            <div>
+                <h2>What do you need done?</h2>
+                <p>Type your request in plain English — be as specific as you like.</p>
+            </div>
+        </div>
+        <textarea
+            id="userInput"
+            placeholder="e.g. I need to send KES 15,000 to my mother in Kisumu urgently."
+            rows="4"
+            oninput="autoResize(this)"
+        ></textarea>
+        <div class="char-hint" id="charHint">Start typing your request above…</div>
+        <button class="submit-btn" id="submitBtn" onclick="submitRequest()">
+            <span id="btnText">Submit Request</span>
+            <span id="btnSpinner" class="spinner hidden"></span>
+        </button>
     </div>
 
-    <h2>Task Dashboard</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Task Code</th>
-                <th>Intent</th>
-                <th>Risk</th>
-                <th>Status</th>
-                <th>Employee</th>
-                <th>Created</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for task in tasks %}
-            <tr>
-                <td><strong>{{ task.task_code }}</strong></td>
-                <td>{{ task.intent }}</td>
-                <td>{{ task.risk_score }}%</td>
-                <td>{{ task.status }}</td>
-                <td>{{ task.employee_category }}</td>
-                <td>{{ task.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>
-                    <select onchange="updateStatus('{{ task.task_code }}', this.value)">
-                        <option value="Pending" {{ 'selected' if task.status == 'Pending' else '' }}>Pending</option>
-                        <option value="In Progress" {{ 'selected' if task.status == 'In Progress' else '' }}>In Progress</option>
-                        <option value="Completed" {{ 'selected' if task.status == 'Completed' else '' }}>Completed</option>
-                    </select>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <!-- ===== RESULT PANEL (hidden until task created) ===== -->
+    <div class="result-panel hidden" id="resultPanel">
+        <div class="result-panel-top">
+            <div class="result-success-icon">✅</div>
+            <div>
+                <h3>Task Created Successfully</h3>
+                <p class="result-code" id="resultCode">—</p>
+            </div>
+            <button class="close-result" onclick="closeResult()">✕</button>
+        </div>
 
-    <script>
-        async function submitRequest() {
-            const msg = document.getElementById('userInput').value.trim();
-            if (!msg) return alert("Please type a request");
+        <div class="result-meta" id="resultMeta"></div>
 
-            const res = await fetch('/process', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: msg })
-            });
+        <div class="message-tabs">
+            <button class="tab-btn active" data-tab="whatsapp" onclick="switchTab(this, 'whatsapp')">💬 WhatsApp</button>
+            <button class="tab-btn" data-tab="email" onclick="switchTab(this, 'email')">📧 Email</button>
+            <button class="tab-btn" data-tab="sms" onclick="switchTab(this, 'sms')">📱 SMS</button>
+        </div>
 
-            const data = await res.json();
-            alert(`✅ Task Created!\n\nTask Code: ${data.task.task_code}`);
-            location.reload();   // refresh to show new task
+        <div class="tab-content">
+            <div class="tab-pane active" id="tab-whatsapp">
+                <pre id="msg-whatsapp"></pre>
+                <button class="copy-btn" onclick="copyMsg('whatsapp')">Copy</button>
+            </div>
+            <div class="tab-pane hidden" id="tab-email">
+                <pre id="msg-email"></pre>
+                <button class="copy-btn" onclick="copyMsg('email')">Copy</button>
+            </div>
+            <div class="tab-pane hidden" id="tab-sms">
+                <pre id="msg-sms"></pre>
+                <button class="copy-btn" onclick="copyMsg('sms')">Copy</button>
+                <div class="sms-counter" id="smsCounter"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TOAST ===== -->
+    <div class="toast hidden" id="toast"></div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="dashboard-section">
+        <div class="dashboard-header">
+            <div>
+                <h2>Task Dashboard</h2>
+                <p>All requests are tracked in real time. Update status as work progresses.</p>
+            </div>
+            <div class="dashboard-stats" id="dashStats"></div>
+        </div>
+
+        {% if tasks %}
+        <div class="tasks-table-wrapper" id="tasksGrid">
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th>Task Code</th>
+                        <th>Intent</th>
+                        <th>Risk</th>
+                        <th>Assigned To</th>
+                        <th>Created</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksTableBody">
+                {% for task in tasks %}
+                    <tr class="risk-{{ 'high' if task.risk_score >= 70 else ('medium' if task.risk_score >= 40 else 'low') }}" id="card-{{ task.task_code }}">
+                        <td><span class="task-code-badge">{{ task.task_code }}</span></td>
+                        <td><span class="intent-label">{{ task.intent | replace('_', ' ') | title }}</span></td>
+                        <td>
+                            <span class="risk-badge risk-{{ 'high' if task.risk_score >= 70 else ('medium' if task.risk_score >= 40 else 'low') }}">
+                                {{ task.risk_score }}%
+                            </span>
+                        </td>
+                        <td><span class="employee-label">{{ task.employee_category }}</span></td>
+                        <td><span class="date-label">{{ task.created_at.strftime('%d %b %Y, %H:%M') }}</span></td>
+                        <td>
+                            <div class="status-cell">
+                                <span class="status-dot status-{{ task.status | lower | replace(' ', '-') }}"></span>
+                                <select class="status-select" onchange="updateStatus('{{ task.task_code }}', this.value, this)">
+                                    <option value="Pending" {{ 'selected' if task.status == 'Pending' else '' }}>Pending</option>
+                                    <option value="In Progress" {{ 'selected' if task.status == 'In Progress' else '' }}>In Progress</option>
+                                    <option value="Completed" {{ 'selected' if task.status == 'Completed' else '' }}>Completed</option>
+                                </select>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h3>No tasks yet</h3>
+            <p>Submit your first request above to get started.</p>
+        </div>
+        {% endif %}
+    </section>
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer">
+    <p>© 2026 Vunoh Global · Built for the Kenyan diaspora</p>
+</footer>
+
+<script>
+// ===== EXAMPLE FILLS =====
+const examples = {
+    send_money:       "I need to send KES 15,000 to my mother in Kisumu urgently.",
+    hire_service:     "Can someone clean my apartment in Westlands on Friday?",
+    verify_document:  "Please verify my land title deed for the plot in Karen, Nairobi.",
+    airport_transfer: "I need an airport transfer from JKIA to Westlands on Saturday morning for 2 people."
+};
+
+function fillExample(key) {
+    const ta = document.getElementById('userInput');
+    ta.value = examples[key];
+    autoResize(ta);
+    updateCharHint(ta.value);
+    ta.focus();
+}
+
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.max(100, el.scrollHeight) + 'px';
+    updateCharHint(el.value);
+}
+
+function updateCharHint(val) {
+    const hint = document.getElementById('charHint');
+    if (!val.trim()) {
+        hint.textContent = 'Start typing your request above…';
+        hint.style.color = 'var(--text-muted)';
+    } else {
+        hint.textContent = `${val.trim().split(/\s+/).length} words`;
+        hint.style.color = 'var(--accent)';
+    }
+}
+
+// ===== SUBMIT =====
+async function submitRequest() {
+    const msg = document.getElementById('userInput').value.trim();
+    if (!msg) { showToast('Please describe your request first.', 'warn'); return; }
+
+    const btn = document.getElementById('submitBtn');
+    document.getElementById('btnText').classList.add('hidden');
+    document.getElementById('btnSpinner').classList.remove('hidden');
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+
+        const t = data.task;
+        showResult(t);
+        addTaskCardToGrid(t);
+        updateDashStats();
+        document.getElementById('userInput').value = '';
+        autoResize(document.getElementById('userInput'));
+        showToast('Task created successfully!', 'success');
+    } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+    } finally {
+        document.getElementById('btnText').classList.remove('hidden');
+        document.getElementById('btnSpinner').classList.add('hidden');
+        btn.disabled = false;
+    }
+}
+
+// ===== RESULT PANEL =====
+let currentMsgs = {};
+
+function showResult(t) {
+    currentMsgs = t.messages;
+    document.getElementById('resultCode').textContent = 'Task Code: ' + t.task_code;
+    document.getElementById('msg-whatsapp').textContent = t.messages.whatsapp;
+    document.getElementById('msg-email').textContent = t.messages.email;
+    document.getElementById('msg-sms').textContent = t.messages.sms;
+
+    const smsLen = t.messages.sms.length;
+    document.getElementById('smsCounter').textContent = smsLen + '/160 characters' + (smsLen > 160 ? ' ⚠️ Over limit' : '');
+
+    const riskClass = t.risk_score >= 70 ? 'high' : t.risk_score >= 40 ? 'medium' : 'low';
+    document.getElementById('resultMeta').innerHTML = `
+        <span class="meta-pill">📋 ${t.intent.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</span>
+        <span class="meta-pill risk-pill-${riskClass}">⚠️ Risk: ${t.risk_score}%</span>
+        <span class="meta-pill">🔄 ${t.status}</span>
+    `;
+
+    const panel = document.getElementById('resultPanel');
+    panel.classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // reset tabs
+    switchTabByName('whatsapp');
+}
+
+function closeResult() {
+    document.getElementById('resultPanel').classList.add('hidden');
+}
+
+function switchTab(btn, name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + name).classList.remove('hidden');
+}
+
+function switchTabByName(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === name);
+    });
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+    document.getElementById('tab-' + name).classList.remove('hidden');
+}
+
+function copyMsg(channel) {
+    navigator.clipboard.writeText(currentMsgs[channel]).then(() => {
+        showToast('Copied to clipboard!', 'success');
+    });
+}
+
+// ===== STATUS UPDATE =====
+async function updateStatus(taskCode, newStatus, selectEl) {
+    try {
+        const res = await fetch('/update_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task_code: taskCode, status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Status updated to "${newStatus}"`, 'success');
+            // update status dot in table row
+            const row = document.getElementById('card-' + taskCode);
+            if (row) {
+                const dot = row.querySelector('.status-dot');
+                dot.className = 'status-dot status-' + newStatus.toLowerCase().replace(' ', '-');
+            }
+            updateDashStats();
+        } else {
+            showToast('Failed to update status.', 'error');
         }
+    } catch {
+        showToast('Network error updating status.', 'error');
+    }
+}
 
-        async function updateStatus(taskCode, newStatus) {
-            await fetch('/update_status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ task_code: taskCode, status: newStatus })
-            });
-            alert(`Status updated to ${newStatus}`);
-            location.reload();
-        }
-    </script>
+// ===== ADD TASK ROW DYNAMICALLY =====
+function addTaskCardToGrid(t) {
+    const emptyState = document.querySelector('.empty-state');
+    if (emptyState) {
+        // Replace empty state with table
+        const section = document.querySelector('.dashboard-section');
+        emptyState.remove();
+        const wrapper = document.createElement('div');
+        wrapper.className = 'tasks-table-wrapper';
+        wrapper.id = 'tasksGrid';
+        wrapper.innerHTML = `
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th>Task Code</th>
+                        <th>Intent</th>
+                        <th>Risk</th>
+                        <th>Assigned To</th>
+                        <th>Created</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksTableBody"></tbody>
+            </table>`;
+        section.appendChild(wrapper);
+    }
+
+    const riskClass = t.risk_score >= 70 ? 'high' : t.risk_score >= 40 ? 'medium' : 'low';
+    const now = new Date().toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const intentLabel = t.intent.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+    const employee = t.employee_category || '—';
+
+    const tbody = document.getElementById('tasksTableBody') || document.querySelector('.tasks-table tbody');
+    const row = document.createElement('tr');
+    row.className = `risk-${riskClass}`;
+    row.id = `card-${t.task_code}`;
+    row.innerHTML = `
+        <td><span class="task-code-badge">${t.task_code}</span></td>
+        <td><span class="intent-label">${intentLabel}</span></td>
+        <td><span class="risk-badge risk-${riskClass}">${t.risk_score}%</span></td>
+        <td><span class="employee-label">${employee}</span></td>
+        <td><span class="date-label">${now}</span></td>
+        <td>
+            <div class="status-cell">
+                <span class="status-dot status-pending"></span>
+                <select class="status-select" onchange="updateStatus('${t.task_code}', this.value, this)">
+                    <option value="Pending" selected>Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+        </td>
+    `;
+    if (tbody) tbody.prepend(row);
+}
+
+// ===== DASHBOARD STATS =====
+function updateDashStats() {
+    const rows = document.querySelectorAll('.tasks-table tbody tr');
+    const total = rows.length;
+    const pending = document.querySelectorAll('.status-dot.status-pending').length;
+    const inProgress = document.querySelectorAll('.status-dot.status-in-progress').length;
+    const completed = document.querySelectorAll('.status-dot.status-completed').length;
+
+    document.getElementById('dashStats').innerHTML = `
+        <span class="stat-pill">📋 ${total} Total</span>
+        <span class="stat-pill stat-pending">⏳ ${pending} Pending</span>
+        <span class="stat-pill stat-progress">🔄 ${inProgress} In Progress</span>
+        <span class="stat-pill stat-done">✅ ${completed} Done</span>
+    `;
+}
+
+// ===== TOAST =====
+function showToast(msg, type = 'info') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast toast-${type}`;
+    t.classList.remove('hidden');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.add('hidden'), 3500);
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+    updateDashStats();
+    document.getElementById('userInput').addEventListener('input', function() {
+        autoResize(this);
+    });
+});
+</script>
 </body>
 </html>
