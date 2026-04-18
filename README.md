@@ -311,4 +311,3 @@ The app can be deployed to [Railway](https://railway.app) or [Render](https://re
 
 ---
 
-*Vunoh Global — AI Internship 2026*
