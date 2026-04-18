@@ -22,4 +22,3 @@ VALUES
 
 conn.commit()
 conn.close()
-print("✅ 5 sample tasks loaded successfully!")
