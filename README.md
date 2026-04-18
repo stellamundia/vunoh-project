@@ -115,6 +115,10 @@ GROQ_API_KEY=your_groq_api_key_here
 ```bash
 python app.py
 ```
+or 
+```bash
+flask run
+```
 
 Open your browser at `http://127.0.0.1:5000`
 
