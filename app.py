@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-import os   # ← make sure this is at the top with other imports
 
 # Use absolute path (fixes Windows Git Bash issue)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.abspath('instance/database.db')
@@ -85,12 +84,26 @@ def calculate_risk_score(intent, entities):
         score += 10
     return min(max(score, 0), 100)
 
+# ====================== HELPERS ======================
+def sync_task_code(messages, task_code):
+    """Ensure the generated task code appears in all three messages."""
+    for channel in ("whatsapp", "email", "sms"):
+        msg = messages.get(channel, "")
+        if task_code not in msg:
+            messages[channel] = msg + f"\nTask Code: {task_code}"
+    return messages
+
+def validate_assignment(category):
+    """Fall back to a sensible default if the AI returns something unexpected."""
+    valid = {"Finance", "Operations", "Legal", "Customer Service"}
+    return category if category in valid else "Customer Service"
+
 # ====================== GROQ CLIENT ======================
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def call_groq(user_message):
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",   # Best performing model on Groq right now
+        model="llama-3.3-70b-versatile",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message}
@@ -102,7 +115,7 @@ def call_groq(user_message):
 
 # ====================== HELPER ======================
 def generate_task_code():
-    return f"VUN-{datetime.now().strftime('%Y%m%d')}-{random.randint(100,999)}"
+    return f"VUN-{datetime.now().strftime('%Y%m%d')}-{random.randint(100, 999)}"
 
 # ====================== ROUTES ======================
 @app.route('/')
@@ -110,41 +123,78 @@ def index():
     tasks = Task.query.order_by(Task.created_at.desc()).all()
     return render_template('index.html', tasks=tasks)
 
+
 @app.route('/process', methods=['POST'])
 def process():
-    user_message = request.json['message']
-    
-    # Call Groq
-    ai_json = call_groq(user_message)   # your existing function
-    
-    task_code = generate_task_code()
-    risk = calculate_risk_score(ai_json["intent"], ai_json["entities"])
-    
-    # ←←← THIS IS THE IMPORTANT PART
-    employee_category = ai_json.get("employee_category", "Support Team")
-    
-    new_task = Task(
-        task_code=task_code,
-        intent=ai_json["intent"],
-        entities=ai_json["entities"],
-        risk_score=risk,
-        employee_category=employee_category,        # ← Make sure this line exists
-        steps=ai_json["steps"],
-        whatsapp_message=ai_json["messages"]["whatsapp"],
-        email_message=ai_json["messages"]["email"],
-        sms_message=ai_json["messages"]["sms"]
-    )
-    db.session.add(new_task)
-    db.session.commit()
-    
-    return jsonify({"task": {
-        "task_code": task_code,
-        "intent": ai_json["intent"],
-        "risk_score": risk,
-        "employee_category": employee_category,     # ← Send it to frontend
-        "status": "Pending",
-        "messages": ai_json["messages"]
-    }})
+    try:
+        # 1. Get user message
+        data = request.get_json()
+        if not data or "message" not in data:
+            return jsonify({"error": "No message provided"}), 400
+
+        user_message = data["message"]
+
+        # 2. Generate task code first
+        task_code = generate_task_code()
+
+        # 3. Send message to AI
+        prompt = f"""
+Customer request:
+
+{user_message}
+
+Task code: {task_code}
+
+IMPORTANT:
+Use this exact task code in all messages.
+Do not create a new task code.
+
+Return JSON only.
+"""
+        ai_json = call_groq(prompt)
+
+        # 4. Calculate risk score
+        risk = calculate_risk_score(ai_json["intent"], ai_json["entities"])
+
+        # 5. Ensure task code is in all messages
+        messages = sync_task_code(ai_json.get("messages", {}), task_code)
+
+        # 6. Validate employee assignment
+        employee = validate_assignment(ai_json.get("employee_category"))
+
+        # 7. Save task to database
+        new_task = Task(
+            task_code=task_code,
+            intent=ai_json.get("intent"),
+            entities=ai_json.get("entities"),
+            risk_score=risk,
+            employee_category=employee,
+            steps=ai_json.get("steps"),
+            whatsapp_message=messages.get("whatsapp"),
+            email_message=messages.get("email"),
+            sms_message=messages.get("sms"),
+            status="Pending"
+        )
+        db.session.add(new_task)
+        db.session.commit()
+
+        # 8. Return response to frontend
+        return jsonify({
+            "success": True,
+            "task": {
+                "task_code": task_code,
+                "intent": new_task.intent,
+                "risk_score": new_task.risk_score,
+                "employee_category": new_task.employee_category,
+                "status": new_task.status,
+                "messages": messages
+            }
+        }), 200
+
+    except Exception as e:
+        print("ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/update_status', methods=['POST'])
 def update_status():
@@ -155,7 +205,6 @@ def update_status():
         db.session.commit()
         return jsonify({"success": True})
     return jsonify({"success": False}), 404
-
 
 
 if __name__ == '__main__':
