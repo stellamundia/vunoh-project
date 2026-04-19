@@ -1,4 +1,6 @@
-# Vunoh Global — AI Diaspora Assistant
+# GlobConnect — AI Diaspora Assistant
+
+🌍 **Live Demo:** [https://globconnect-ai-assistant.onrender.com](https://globconnect-ai-assistant.onrender.com)
 
 An AI-powered web application that helps Kenyans living abroad initiate and track core services back home: sending money, hiring local services, verifying documents, and booking airport transfers.
 
@@ -80,7 +82,7 @@ vunoh-project/
 ### 1. Clone the repository
 
 ```bash
-git https://github.com/stellamundia/vunoh-project.git
+git clone https://github.com/YOUR_USERNAME/vunoh-project.git
 cd vunoh-project
 ```
 
@@ -114,10 +116,6 @@ GROQ_API_KEY=your_groq_api_key_here
 
 ```bash
 python app.py
-```
-or 
-```bash
-flask run
 ```
 
 Open your browser at `http://127.0.0.1:5000`
@@ -305,9 +303,26 @@ sqlite3 instance/database.db < dump.sql
 
 ---
 
-## Deployment (Optional)
+## Deployment
 
-The app can be deployed to [Railway](https://railway.app) or [Render](https://render.com) with minimal configuration. Both platforms detect Flask apps automatically. Set the `GROQ_API_KEY` environment variable in the platform's dashboard. For production, replace the SQLite URI with a PostgreSQL connection string — the SQLAlchemy model requires no changes.
+The app is live on Render:
+
+🔗 **[https://globconnect-ai-assistant.onrender.com](https://globconnect-ai-assistant.onrender.com)**
+
+Deployed using Render's free tier with the following configuration:
+
+| Field | Value |
+|-------|-------|
+| Platform | Render |
+| Runtime | Python 3 |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `gunicorn app:app` |
+| Environment Variable | `GROQ_API_KEY` set in Render dashboard |
+
+Render auto-deploys on every push to the `main` branch. To deploy your own instance, fork the repo, connect it to Render, and add your `GROQ_API_KEY` in the environment variables section.
+
+> **Note:** The free tier uses an ephemeral filesystem — the SQLite database resets on redeploy. For persistent storage, swap the SQLite URI for a PostgreSQL connection string in `app.py`.
 
 ---
 
+*GlobConnect — AI Internship 2026 · Built for the Kenyan diaspora*
