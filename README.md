@@ -82,8 +82,8 @@ vunoh-project/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/vunoh-project.git
-cd vunoh-project
+git clone https://github.com/stellamundia/Globconnect-ai-assistant.git
+cd Globconnect-ai-assistant
 ```
 
 ### 2. Create and activate a virtual environment
